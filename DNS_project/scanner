@@ -1,0 +1,153 @@
+#!/usr/bin/env node
+'use strict';
+
+/**
+ * ReconX CLI Scanner
+ * Usage: ./scanner -d example.com [--active] [--no-shuffle]
+ * Powered by Rajeshwar Singh
+ */
+
+const path    = require('path');
+const fs      = require('fs');
+const os      = require('os');
+
+// Inline banner
+const CYAN  = '\x1b[36m';
+const GREEN = '\x1b[32m';
+const RED   = '\x1b[31m';
+const YELLOW= '\x1b[33m';
+const RESET = '\x1b[0m';
+const BOLD  = '\x1b[1m';
+const DIM   = '\x1b[2m';
+
+function banner() {
+  console.log(`
+${CYAN}${BOLD}
+ ██████╗ ███████╗ ██████╗ ██████╗ ███╗   ██╗██╗  ██╗
+ ██╔══██╗██╔════╝██╔════╝██╔═══██╗████╗  ██║╚██╗██╔╝
+ ██████╔╝█████╗  ██║     ██║   ██║██╔██╗ ██║ ╚███╔╝ 
+ ██╔══██╗██╔══╝  ██║     ██║   ██║██║╚██╗██║ ██╔██╗ 
+ ██║  ██║███████╗╚██████╗╚██████╔╝██║ ╚████║██╔╝ ██╗
+ ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═╝
+${RESET}${DIM} Subdomain Recon & Takeover Detection  •  Powered by Rajeshwar Singh${RESET}
+`);
+}
+
+// Parse CLI args
+const args   = process.argv.slice(2);
+const flags  = {};
+for (let i = 0; i < args.length; i++) {
+  if (args[i] === '-d' || args[i] === '--domain') { flags.domain = args[++i]; }
+  else if (args[i] === '--active')     { flags.active = true; }
+  else if (args[i] === '--no-shuffle') { flags.noShuffle = true; }
+  else if (args[i] === '--web')        { flags.web = true; }
+  else if (args[i] === '-h' || args[i] === '--help') { flags.help = true; }
+}
+
+if (flags.help || !flags.domain) {
+  banner();
+  console.log(`${BOLD}Usage:${RESET}  ./scanner -d <domain> [options]`);
+  console.log('');
+  console.log(`${BOLD}Options:${RESET}`);
+  console.log('  -d, --domain <domain>    Target domain (required)');
+  console.log('  --active                 Enable amass active enumeration');
+  console.log('  --no-shuffle             Skip shuffledns bruteforce');
+  console.log('  --web                    Start web UI after scan');
+  console.log('  -h, --help               Show this help');
+  console.log('');
+  console.log(`${BOLD}Example:${RESET}  ./scanner -d bugcrowd.com`);
+  process.exit(flags.help ? 0 : 1);
+}
+
+// ── Validate domain (inline, no dep) ────────────────────────────────────────
+const domain = flags.domain.toLowerCase().replace(/^https?:\/\//i, '').replace(/\/.*$/, '');
+if (!/^(?:[a-z0-9](?:[a-z0-9\-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/.test(domain)) {
+  console.error(`${RED}✗ Invalid domain: ${domain}${RESET}`);
+  process.exit(1);
+}
+
+// ── Try to start via backend if node_modules available ────────────────────────
+const backendDir = path.join(__dirname, 'backend');
+const nmExists   = fs.existsSync(path.join(backendDir, 'node_modules'));
+
+if (!nmExists) {
+  console.warn(`${YELLOW}⚠ Backend dependencies not installed.${RESET}`);
+  console.log(`Run: ${BOLD}cd backend && npm install${RESET}`);
+  console.log('');
+  console.log(`Then rerun: ${BOLD}./scanner -d ${domain}${RESET}`);
+  process.exit(1);
+}
+
+// ── Load backend services directly ───────────────────────────────────────────
+process.chdir(backendDir);
+const { resolvePaths }   = require('./backend/utils/toolPaths');
+const { validateDomain } = require('./backend/utils/validator');
+const { runEnumeration } = require('./backend/services/enumeration');
+const { createLogger }   = require('./backend/utils/logger');
+
+banner();
+console.log(`${GREEN}${BOLD}[✓] Target:${RESET} ${domain}`);
+
+// Check tools
+const { paths, missing } = resolvePaths();
+if (missing.length > 0) {
+  console.warn(`${YELLOW}⚠ Missing tools: ${missing.join(', ')}${RESET}`);
+} else {
+  console.log(`${GREEN}[✓] All tools detected${RESET}`);
+}
+console.log('');
+
+// Check internet
+try {
+  require('child_process').execSync('ping -c1 -W2 1.1.1.1 >/dev/null 2>&1');
+  console.log(`${GREEN}[✓] Internet connectivity OK${RESET}`);
+} catch {
+  console.warn(`${YELLOW}⚠ No internet — passive sources may fail${RESET}`);
+}
+console.log('');
+
+// Logger that prints to stdout
+const logFile = path.join(os.homedir(), 'recon', domain, 'logs.txt');
+fs.mkdirSync(path.dirname(logFile), { recursive: true });
+
+const logger = createLogger(logFile, ({ level, msg }) => {
+  const col = { info: DIM, warn: YELLOW, error: RED, success: GREEN }[level] || DIM;
+  console.log(`${col}[${level.toUpperCase()}]${RESET} ${msg}`);
+});
+
+const broadcast = ({ type, stage, msg, key, value }) => {
+  if (type === 'stage') console.log(`\n${CYAN}${BOLD}── ${stage.toUpperCase()} ─────────────────────────────${RESET}`);
+  if (type === 'count') console.log(`${GREEN}  ${key}: ${value}${RESET}`);
+  if (type === 'done')  {}  // final summary printed below
+};
+
+(async () => {
+  const start = Date.now();
+  try {
+    const result = await runEnumeration(domain, paths, logger, broadcast);
+    const secs   = ((Date.now() - start) / 1000).toFixed(1);
+
+    console.log(`\n${GREEN}${BOLD}╔══════════════════ SCAN COMPLETE ══════════════════╗${RESET}`);
+    console.log(`${GREEN}  Total Subdomains : ${result.allCount}${RESET}`);
+    console.log(`${GREEN}  Live Hosts       : ${result.liveCount}${RESET}`);
+    console.log(`${GREEN}  HTTP Results     : ${result.finalData.length}${RESET}`);
+
+    if (result.takeovers > 0) {
+      console.log(`${RED}${BOLD}  ⚠ TAKEOVERS       : ${result.takeovers} (DOUBLE-VERIFIED)${RESET}`);
+    } else {
+      console.log(`${GREEN}  Takeovers        : 0 (clean)${RESET}`);
+    }
+
+    console.log(`${GREEN}  Time             : ${secs}s${RESET}`);
+    console.log(`${GREEN}  Output           : ~/recon/${domain}/${RESET}`);
+    console.log(`${GREEN}${BOLD}╚═══════════════════════════════════════════════════╝${RESET}\n`);
+
+    if (flags.web) {
+      console.log(`${CYAN}Opening dashboard…${RESET}`);
+      try { require('child_process').execSync('open http://localhost:4000'); } catch {}
+    }
+  } catch (err) {
+    console.error(`${RED}${BOLD}[FATAL] ${err.message}${RESET}`);
+    process.exit(1);
+  }
+})();
