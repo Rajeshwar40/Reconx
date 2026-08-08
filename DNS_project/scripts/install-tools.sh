@@ -125,26 +125,36 @@ install_go_tool() {
   fi
 }
 
-install_amass() {
-  if command -v amass >/dev/null 2>&1; then
-    log "amass already installed — skipping"
+# amass and nuclei have larger dependency trees than the other tools here and
+# have been observed to fail `go install` on resource-constrained or
+# flaky-network machines (timeout, OOM during compile, module fetch hiccups).
+# Retry once, then fall back to the OS package manager — both are packaged
+# in Kali/Debian/Arch repos.
+install_go_tool_with_fallback() {
+  local bin="$1" pkg="$2" pkgname="${3:-$bin}"
+  if command -v "$bin" >/dev/null 2>&1; then
+    log "$bin already installed — skipping"
     return
   fi
-  log "Installing amass…"
-  if GOBIN="$GOBIN_DIR" go install github.com/owasp-amass/amass/v4/cmd/amass@latest 2>/tmp/install_amass.log; then
-    log "amass installed via go install"
-    return
-  fi
-  warn "go install for amass failed, trying system package manager…"
+  log "Installing $bin ($pkg)…"
+  local attempt
+  for attempt in 1 2; do
+    if GOBIN="$GOBIN_DIR" go install "$pkg" 2>"/tmp/install_${bin}.log"; then
+      log "$bin installed via go install"
+      return
+    fi
+    [ "$attempt" -eq 1 ] && warn "$bin: go install attempt 1 failed, retrying once…"
+  done
+  warn "go install for $bin failed twice, trying system package manager…"
   case "$PKG_MANAGER" in
-    apt-get) $SUDO apt-get install -y amass || true ;;
-    dnf)     $SUDO dnf install -y amass || true ;;
-    yum)     $SUDO yum install -y amass || true ;;
-    apk)     $SUDO apk add --no-cache amass || true ;;
-    pacman)  $SUDO pacman -S --noconfirm amass || true ;;
-    brew)    brew install amass || true ;;
+    apt-get) $SUDO apt-get install -y "$pkgname" || true ;;
+    dnf)     $SUDO dnf install -y "$pkgname" || true ;;
+    yum)     $SUDO yum install -y "$pkgname" || true ;;
+    apk)     $SUDO apk add --no-cache "$pkgname" || true ;;
+    pacman)  $SUDO pacman -S --noconfirm "$pkgname" || true ;;
+    brew)    brew install "$pkgname" || true ;;
   esac
-  command -v amass >/dev/null 2>&1 || err "amass installation failed via all methods — see /tmp/install_amass.log"
+  command -v "$bin" >/dev/null 2>&1 || err "$bin installation failed via all methods — see /tmp/install_${bin}.log"
 }
 
 main() {
@@ -157,10 +167,10 @@ main() {
 
   install_go_tool subfinder   github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest required
   install_go_tool assetfinder github.com/tomnomnom/assetfinder@latest                        required
-  install_amass
+  install_go_tool_with_fallback amass github.com/owasp-amass/amass/v4/cmd/amass@latest amass
   install_go_tool dnsx        github.com/projectdiscovery/dnsx/cmd/dnsx@latest                required
   install_go_tool httpx       github.com/projectdiscovery/httpx/cmd/httpx@latest              required
-  install_go_tool nuclei      github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest          required
+  install_go_tool_with_fallback nuclei github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest nuclei
   install_go_tool shuffledns  github.com/projectdiscovery/shuffledns/cmd/shuffledns@latest     optional
 
   if command -v nuclei >/dev/null 2>&1; then

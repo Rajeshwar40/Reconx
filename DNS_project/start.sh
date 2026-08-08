@@ -9,7 +9,7 @@ RED='\033[0;31m'
 BOLD='\033[1m'
 RESET='\033[0m'
 
-ROOT="$(cd "$(dirname "$0")" && pwd)"
+ROOT="${0:A:h}"
 
 # Prepend Homebrew paths so env/subshells can find node
 export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/local/sbin:/usr/bin:/bin:/usr/sbin:/sbin:$HOME/go/bin:$HOME/.local/bin:$HOME/bin:$PATH"
@@ -83,7 +83,9 @@ for tool in subfinder assetfinder amass dnsx httpx nuclei shuffledns; do
   path="$(find_tool "$tool")"
   if [[ -n "$path" ]]; then
     # Add tool's directory to PATH so the backend can also find it
-    export PATH="$(dirname "$path"):$PATH"
+    # (zsh's :h modifier — avoids relying on the external `dirname` binary,
+    # which has been observed to intermittently fail resolution here)
+    export PATH="${path:h}:$PATH"
     echo "  ${GREEN}✓ $tool${RESET} → $path"
   else
     echo "  ${YELLOW}⚠ $tool not found${RESET}"
