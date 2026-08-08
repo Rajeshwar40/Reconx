@@ -13,6 +13,9 @@ ROOT="${0:A:h}"
 
 # Prepend Homebrew paths so env/subshells can find node
 export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/local/sbin:/usr/bin:/bin:/usr/sbin:/sbin:$HOME/go/bin:$HOME/.local/bin:$HOME/bin:$PATH"
+# Clear zsh's command hash so tools installed since this shell/terminal
+# opened (e.g. amass/nuclei via apt) are actually found below.
+hash -r
 
 # Resolve absolute paths now — used everywhere below
 NODE_BIN="$(command -v node 2>/dev/null)"
@@ -61,6 +64,8 @@ done
 TOOL_PATHS=(
   "/opt/homebrew/bin"
   "/usr/local/bin"
+  "/usr/bin"
+  "/bin"
   "$HOME/go/bin"
   "$HOME/.local/bin"
   "$HOME/bin"
