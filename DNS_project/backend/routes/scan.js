@@ -13,8 +13,8 @@ router.post('/', (req, res) => {
   const raw = req.body.domain || '';
   const { valid, domain, error } = validateDomain(raw);
   if (!valid) return res.status(400).json({ error });
-  const scanId = scanManager.startScan(domain);
-  return res.json({ scanId, domain, status: 'started' });
+  const { scanId, reused } = scanManager.startScan(domain);
+  return res.json({ scanId, domain, status: reused ? 'already-running' : 'started', reused });
 });
 
 // POST /api/scan/:scanId/stop

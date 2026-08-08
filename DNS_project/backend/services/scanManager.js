@@ -26,6 +26,15 @@ class ScanManager extends EventEmitter {
   }
 
   startScan(domain) {
+    // Concurrent scans of the same domain would share the same on-disk
+    // output path (~/recon/<domain>/logs.txt, all_subdomains.txt) and
+    // corrupt each other's files — reuse the in-flight scan instead.
+    for (const existing of this.scans.values()) {
+      if (existing.domain === domain && (existing.status === 'running' || existing.status === 'stopping')) {
+        return { scanId: existing.scanId, reused: true };
+      }
+    }
+
     const scanId  = uuidv4();
     const logFile = `${os.homedir()}/recon/${domain}/logs.txt`;
     fs.mkdirSync(`${os.homedir()}/recon/${domain}`, { recursive: true });
@@ -77,7 +86,7 @@ class ScanManager extends EventEmitter {
       }
     }, 600);
 
-    return scanId;
+    return { scanId, reused: false };
   }
 
   stopScan(scanId) {
