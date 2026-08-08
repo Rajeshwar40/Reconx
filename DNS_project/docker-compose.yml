@@ -20,6 +20,7 @@ services:
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:2000/api}
         NEXT_PUBLIC_API_KEY: ${NEXT_PUBLIC_API_KEY:-}
+        BACKEND_URL: http://backend:2000
     ports:
       - "4000:4000"
     depends_on:

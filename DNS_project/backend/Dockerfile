@@ -9,6 +9,11 @@ RUN chmod +x /tmp/install-tools.sh && /tmp/install-tools.sh
 # ── Stage 2: runtime image ───────────────────────────────────────────
 FROM node:20-bookworm-slim
 
+# /api/connectivity shells out to `ping`, which node:20-bookworm-slim doesn't
+# include by default.
+RUN apt-get update && apt-get install -y --no-install-recommends iputils-ping \
+    && rm -rf /var/lib/apt/lists/*
+
 # Compiled Go binaries from the tools stage (default GOPATH is /root/go as root)
 COPY --from=tools /root/go/bin/* /usr/local/bin/
 

@@ -10,8 +10,10 @@ COPY frontend/ ./
 # NEXT_PUBLIC_* vars are inlined at build time — pass them via --build-arg.
 ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_API_KEY
+ARG BACKEND_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_KEY=$NEXT_PUBLIC_API_KEY
+ENV BACKEND_URL=$BACKEND_URL
 RUN npm run build
 
 FROM node:20-alpine AS runner
