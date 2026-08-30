@@ -1,0 +1,31 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "2000:2000"
+    environment:
+      PORT: 2000
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      API_KEY: ${API_KEY:-}
+    volumes:
+      - recon-data:/root/recon
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:2000/api}
+        NEXT_PUBLIC_API_KEY: ${NEXT_PUBLIC_API_KEY:-}
+        BACKEND_URL: http://backend:2000
+    ports:
+      - "4000:4000"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  recon-data:
