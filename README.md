@@ -93,7 +93,7 @@ All scanning runs against real infrastructure you control or are authorized to t
 
 ```bash
 git clone https://github.com/Rajeshwar40/Reconx.git
-cd Reconx/DNS_project
+cd Reconx/
 ./scripts/install-tools.sh   # installs subfinder, assetfinder, amass, dnsx, httpx, nuclei, shuffledns
 ./start.sh                   # backend :2000, frontend :4000
 ```
@@ -140,7 +140,7 @@ docker compose up --build -d
 ## 📁 Project Structure
 
 ```
-DNS_project
+Reconx
 ├── scanner                    # CLI entry point
 ├── start.sh                   # Local (non-Docker) launcher
 ├── docker-compose.yml
