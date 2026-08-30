@@ -12,7 +12,7 @@
 **Production-grade subdomain enumeration & takeover detection for bug bounty hunters.**
 Passive + active recon, DNS resolution, HTTP probing, and double-verified takeover checks — one pipeline.
 
-[🚀 **Launch Tool**](https://github.com/Rajeshwar40/Reconx/tree/main/DNS_project) · [🌐 **Landing Page**](https://rajeshwar40.github.io/Reconx/) · [🎬 **Watch Demo**](#-demo) · [🐛 **Report a Bug**](https://github.com/Rajeshwar40/Reconx/issues)
+[🚀 **Launch Tool**](https://github.com/Rajeshwar40/Reconx/) · [🌐 **Landing Page**](https://rajeshwar40.github.io/Reconx/) · [🎬 **Watch Demo**](#-demo) · [🐛 **Report a Bug**](https://github.com/Rajeshwar40/Reconx/issues)
 
 </div>
 
