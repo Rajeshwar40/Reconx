@@ -1,75 +1,114 @@
-# ReconX — Subdomain Intelligence Platform
+<div align="center">
 
-> Production-grade subdomain enumeration & takeover detection for bug bounty hunters  
-> **Powered by Rajeshwar Singh**
+# 🔍 ReconX v1.0
+
+[![ReconX](https://img.shields.io/badge/ReconX-Bug_Bounty_Edition-3ce095?style=for-the-badge&logo=target&logoColor=white)](https://rajeshwar40.github.io/Reconx/)
+[![Author](https://img.shields.io/badge/author-%40Rajeshwar40-5ad0e0?style=for-the-badge&logo=github)](https://github.com/Rajeshwar40)
+[![License](https://img.shields.io/badge/License-MIT-ffb454?style=for-the-badge)](LICENSE)
+[![Node](https://img.shields.io/badge/Node-20%2B-333333?style=for-the-badge&logo=node.js&logoColor=white)]()
+[![Zero False Positives](https://img.shields.io/badge/Takeover_Detection-Zero_False_Positives-34d399?style=for-the-badge)]()
+[![Platform](https://img.shields.io/badge/Platform-macOS_%C2%B7_Linux-090c0d?style=for-the-badge)]()
+
+**Production-grade subdomain enumeration & takeover detection for bug bounty hunters.**
+Passive + active recon, DNS resolution, HTTP probing, and double-verified takeover checks — one pipeline.
+
+[🚀 **Launch Tool**](https://github.com/Rajeshwar40/Reconx/tree/main/DNS_project) · [🌐 **Landing Page**](https://rajeshwar40.github.io/Reconx/) · [🎬 **Watch Demo**](#-demo) · [🐛 **Report a Bug**](https://github.com/Rajeshwar40/Reconx/issues)
+
+</div>
 
 ---
 
-## Features
+## 🎬 Demo
 
-- **Passive enumeration** via subfinder, assetfinder, amass (parallel)
-- **Active bruteforce** via shuffledns with auto-generated resolvers
-- **DNS resolution** via dnsx
-- **HTTP probing** via httpx (status, title, tech, RTT)
-- **Takeover detection** via nuclei with **double-verification** (zero false positives)
-- **Real-time logs** via SSE stream
-- **Professional dashboard** (Next.js + terminal aesthetic)
-- **CLI mode** for headless operation
-- macOS / Apple Silicon compatible
+<div align="center">
+
+[![ReconX Demo](https://img.youtube.com/vi/YOUR_VIDEO_ID/maxresdefault.jpg)](https://www.youtube.com/watch?v=YOUR_VIDEO_ID)
+
+**▶ [Watch the full demo on YouTube](https://www.youtube.com/watch?v=YOUR_VIDEO_ID)**
+*(placeholder until the video is uploaded — swap `YOUR_VIDEO_ID` in both spots above)*
+
+</div>
 
 ---
 
-## Quick Start (local machine)
+## Overview
 
-Requires Node.js 20+. Works on macOS and Linux (Ubuntu/Debian/RHEL/Fedora/Alpine/Arch) — the installer below detects your OS/distro/architecture and installs the right recon tool chain automatically.
+**ReconX** is a full subdomain intelligence pipeline built for bug bounty workflows: it chains passive and active enumeration, DNS resolution, HTTP probing, and a strict double-verification takeover scan into one run, exposed through both a real-time web dashboard and a headless CLI.
 
-### 1. Clone and install the recon tool chain
-
-```bash
-git clone <this-repo-url>
-cd DNS_project
-./scripts/install-tools.sh
-```
-
-This installs Go (if missing) and then `subfinder`, `assetfinder`, `amass`, `dnsx`, `httpx`, `nuclei`, and `shuffledns` via the right package manager for your machine, skipping anything already present. Safe to re-run.
-
-If you use `subfinder` with API-keyed sources (Shodan, VirusTotal, etc.), put your keys in `~/.config/subfinder/provider-config.yaml` — the backend explicitly points subfinder at that file (see [enumeration.js](backend/services/enumeration.js)) instead of relying on subfinder's OS-dependent default, so this is the one place to configure.
-
-### 2. Launch (macOS/Linux, no Docker)
-
-```bash
-./start.sh
-```
-
-This installs Node dependencies on first run, starts the backend on port **2000** and frontend on port **4000**, and opens the dashboard.
-
-Optional environment variables (copy `backend/.env.example` → `backend/.env`, `frontend/.env.example` → `frontend/.env`):
-
-| Var | Where | Purpose |
+| Stage | Tool(s) | What it does |
 |---|---|---|
-| `API_KEY` | backend | Requires `x-api-key` on `/api/scan/*` when set. Leave blank for local dev. |
-| `CORS_ORIGIN` | backend | Restrict CORS in production; defaults to `*`. |
-| `NEXT_PUBLIC_API_URL` | frontend | Full backend URL, e.g. `https://recon.example.com/api`. Leave blank for local (relative `/api`). |
-| `NEXT_PUBLIC_API_KEY` | frontend | Must match backend `API_KEY` if auth is enabled. |
+| 🕵️ **Passive enumeration** | `subfinder` · `assetfinder` · `amass` | Pulls subdomains from public sources in parallel, no traffic to the target |
+| 🔨 **Active bruteforce** | `shuffledns` | Wordlist bruteforce with auto-generated resolvers (`--active`) |
+| 🌐 **DNS resolution** | `dnsx` | Confirms which discovered names actually resolve |
+| 📡 **HTTP probing** | `httpx` | Status code, page title, tech stack, response time per host |
+| 🎯 **Takeover detection** | `nuclei` (double-verification) | Only reports hosts vulnerable in **both** scan passes |
 
-### 3. CLI mode
+All scanning runs against real infrastructure you control or are authorized to test — this is a recon *pipeline*, not a hosted scanning service.
+
+---
+
+## ✨ Features
+
+- ⚡ **Full pipeline, one command** — passive → active → resolve → probe → takeover, chained automatically
+- 🖥️ **Real-time dashboard** — Next.js UI with terminal aesthetic, streamed over SSE
+- ⌨️ **Headless CLI mode** — `./scanner -d target.com` for scripting and CI
+- 🔁 **Double-verified takeover detection** — two-pass nuclei scan eliminates transient false positives
+- 🧰 **Cross-platform installer** — `install-tools.sh` detects OS/distro/arch and installs the right recon tool chain
+- 🔑 **Optional API-key auth** — gate `/api/scan/*` behind `x-api-key` for public deployments
+- 🐳 **Docker / cloud ready** — multi-stage builds, `docker-compose.yml` wires backend + frontend + persistent volume
+- 🛡️ **Sanitized inputs** — domain inputs regex-validated and shell-injection sanitized, tool paths resolved via `which`
+
+---
+
+## 📁 Output Files
+
+| File | Description |
+|------|-------------|
+| `all_subdomains.txt` | All discovered subdomains (deduplicated) |
+| `live.txt` | DNS-resolved live subdomains |
+| `final.json` | Structured HTTP probe results |
+| `takeover.txt` | Raw nuclei takeover findings (double-verified) |
+| `logs.txt` | Full timestamped scan log |
+
+**Example `final.json` entry:**
+
+```json
+{
+  "subdomain": "dev.example.com",
+  "url": "http://dev.example.com",
+  "ip": "1.2.3.4",
+  "status": 200,
+  "title": "Dev Portal",
+  "tech": "nginx, React",
+  "responseTime": "123ms",
+  "takeover": false
+}
+```
+
+---
+
+## 🚀 Usage
+
+### Option 1 — Local (no Docker)
+
+```bash
+git clone https://github.com/Rajeshwar40/Reconx.git
+cd Reconx/DNS_project
+./scripts/install-tools.sh   # installs subfinder, assetfinder, amass, dnsx, httpx, nuclei, shuffledns
+./start.sh                   # backend :2000, frontend :4000
+```
+
+Copy `backend/.env.example` → `backend/.env` and `frontend/.env.example` → `frontend/.env` to configure `API_KEY`, `CORS_ORIGIN`, and `NEXT_PUBLIC_API_URL` for anything beyond local dev.
+
+### Option 2 — CLI only
 
 ```zsh
-# Basic scan
-./scanner -d example.com
-
-# With active amass enumeration
-./scanner -d example.com --active
-
-# Open web UI after scan completes
-./scanner -d example.com --web
+./scanner -d example.com                 # basic scan
+./scanner -d example.com --active        # + active amass enumeration
+./scanner -d example.com --web           # open dashboard after scan
 ```
 
----
-
-## Docker / Cloud Deployment
-
-For deploying to a VM or container platform rather than running locally:
+### Option 3 — Docker / cloud deployment
 
 ```bash
 API_KEY=your-shared-secret \
@@ -79,122 +118,71 @@ NEXT_PUBLIC_API_KEY=your-shared-secret \
 docker compose up --build -d
 ```
 
-- `backend/Dockerfile` — multi-stage build that runs `scripts/install-tools.sh` in a builder stage, then copies just the compiled tool binaries into a slim runtime image.
-- `frontend/Dockerfile` — standard multi-stage Next.js build; `NEXT_PUBLIC_*` vars are baked in at build time via `docker-compose.yml`'s `args`.
-- `docker-compose.yml` — wires both services together with a persistent volume (`recon-data`) for scan output, since results are written to disk.
-
-**Before exposing this on a public IP:** set `API_KEY` — without it, anyone who reaches `/api/scan` can trigger real scans against arbitrary domains using your server's IP and compute. Also put a reverse proxy (Nginx/Caddy/your platform's LB) in front with **buffering disabled** on `/api/scan/:id/events`, since it's a long-lived SSE stream that gets cut if the proxy buffers it.
+> **Before exposing this on a public IP:** set `API_KEY` — without it, anyone reaching `/api/scan` can trigger scans against arbitrary domains on your compute. Put a reverse proxy in front with buffering disabled on `/api/scan/:id/events` (long-lived SSE stream).
 
 ---
 
-## Architecture
+## 🛠 Tech Stack
+
+| Technology | Purpose |
+|---|---|
+| **Node.js / Express** | Backend API + SSE log streaming (port 2000) |
+| **Next.js** | Terminal-styled dashboard frontend (port 4000) |
+| **subfinder / assetfinder / amass** | Passive subdomain discovery |
+| **shuffledns** | Active DNS bruteforce |
+| **dnsx** | Bulk DNS resolution |
+| **httpx** | HTTP probing & tech fingerprinting |
+| **nuclei** | Takeover template scanning, double-verified |
+| **Docker Compose** | Multi-service deployment with persistent scan volume |
+
+---
+
+## 📁 Project Structure
 
 ```
 DNS_project
- ├── scanner                    # CLI entry point
- ├── start.sh                   # Local (non-Docker) launcher
- ├── docker-compose.yml
- ├── scripts/
- │    └── install-tools.sh      # OS-detecting recon tool chain installer
- ├── backend/
- │    ├── Dockerfile
- │    ├── index.js              # Express server (port 2000)
- │    ├── middleware/
- │    │    └── auth.js          # API key gate for /api/scan/*
- │    ├── routes/
- │    │    └── scan.js          # API routes + SSE
- │    ├── services/
- │    │    ├── enumeration.js   # Full recon pipeline
- │    │    └── scanManager.js   # Scan state + SSE clients
- │    └── utils/
- │         ├── validator.js     # Domain sanitization
- │         ├── toolPaths.js     # Dynamic tool detection
- │         └── logger.js        # File + SSE logging
- ├── frontend/
- │    ├── Dockerfile
- │    └── src/app/
- │         ├── page.js          # Dashboard UI
- │         └── globals.css
- └── ~/recon/                   # Output directory (outside the repo)
-      └── <domain>/
-           ├── all_subdomains.txt
-           ├── live.txt
-           ├── final.json
-           ├── takeover.txt
-           └── logs.txt
+├── scanner                    # CLI entry point
+├── start.sh                   # Local (non-Docker) launcher
+├── docker-compose.yml
+├── scripts/
+│    └── install-tools.sh      # OS-detecting recon tool chain installer
+├── backend/
+│    ├── index.js              # Express server (port 2000)
+│    ├── middleware/auth.js    # API key gate for /api/scan/*
+│    ├── routes/scan.js        # API routes + SSE
+│    ├── services/             # enumeration.js, scanManager.js
+│    └── utils/                # validator.js, toolPaths.js, logger.js
+├── frontend/
+│    └── src/app/               # page.js, globals.css
+└── ~/recon/<domain>/           # Output: subdomains, live hosts, JSON, takeover, logs
 ```
 
 ---
 
-## API Endpoints
+## 👤 Author
 
-`/api/scan/*` routes require the `x-api-key` header (or `?apiKey=` query param for the SSE endpoint) when `API_KEY` is set in the backend environment. Unset by default for local dev.
+**Rajeshwar Singh** · `@Rajeshwar40`
+Independent Security Researcher
 
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/api/scan` | Start scan `{ domain }` |
-| GET | `/api/scan/:id/events` | SSE log stream |
-| GET | `/api/scan/:id/status` | Scan status |
-| GET | `/api/scan/:id/results` | Full JSON results |
-| GET | `/api/scan/:id/file/:name` | Download output file |
-| GET | `/api/scans` | List all scans |
-| GET | `/api/tools/check` | Tool availability |
-| GET | `/api/health` | Health check |
+| | |
+|--|--|
+| 🐙 GitHub | [@Rajeshwar40](https://github.com/Rajeshwar40) |
+| 🔍 Project | [ReconX](https://github.com/Rajeshwar40/Reconx) |
+| 📜 Certs | CRTP · CEH · CCNA |
+| 🐛 CVEs | 10+ credited |
 
 ---
 
-## Output Files
+## ⚖️ License
 
-| File | Description |
-|------|-------------|
-| `all_subdomains.txt` | All discovered subdomains (deduplicated) |
-| `live.txt` | DNS-resolved live subdomains |
-| `final.json` | Structured HTTP probe results |
-| `takeover.txt` | Raw nuclei takeover findings |
-| `logs.txt` | Full timestamped scan log |
+MIT License — free to use, modify, and distribute. Attribution appreciated.
 
 ---
 
-## Takeover Detection
+<div align="center">
 
-Strict double-verification mode:
-1. **Pass 1**: nuclei scans all live subdomains with takeover templates
-2. **Pass 2**: Re-scans only candidates from pass 1
-3. **Only reports** hosts that appear as vulnerable in **both** passes
+🔍 **ReconX v1.0** · Built by [@Rajeshwar40](https://github.com/Rajeshwar40) · Bug Bounty Edition · Zero False Positives
 
-This eliminates false positives from transient network conditions.
+⭐ **Star this repo if it helped you** ⭐
 
----
-
-## Example Scan Output
-
-```
-~/recon/example.com/final.json
-[
-  {
-    "subdomain": "dev.example.com",
-    "url": "http://dev.example.com",
-    "ip": "1.2.3.4",
-    "status": 200,
-    "title": "Dev Portal",
-    "tech": "nginx, React",
-    "responseTime": "123ms",
-    "takeover": false
-  },
-  ...
-]
-```
-
----
-
-## Security Notes
-
-- All domain inputs are regex-validated and shell-injection sanitized
-- No external data is sent anywhere
-- Tool paths resolved dynamically via `which` (no hardcoded paths)
-- Rate limiting applied on nuclei to avoid bans
-
----
-
-*ReconX v1.0 — Bug Bounty Edition — Zero False Positives*  
-*Powered by Rajeshwar Singh*
+</div>
